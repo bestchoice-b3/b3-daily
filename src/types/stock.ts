@@ -9,6 +9,7 @@ export interface StockChecklist {
   distanciaMedia200: boolean;
   upside: boolean;
   plAverage: boolean;
+  rent: boolean;
 }
 
 export interface Stock {
@@ -35,7 +36,9 @@ export interface Stock {
   dividendYieldTarget?: number;
   dividendYieldTargetPercent?: number;
   dividendYieldTargetPrice?: number;
+  rentUrl?: string | null;
   annotations?: Annotation[];
+
 }
 
 export interface Annotation {

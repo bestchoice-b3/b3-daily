@@ -32,6 +32,7 @@ export function StockCard({
     { key: "distanciaMedia200", label: "Distância Média 200" },
     { key: "upside", label: "Upside" },
     { key: "plAverage", label: "PL Médio" },
+    { key: "rent", label: "Aluguéis" },
   ];
 
   return (
@@ -148,18 +149,18 @@ export function StockCard({
                   onChecklistChange(
                     stock.symbol,
                     key as keyof Stock["checklist"],
-                    !stock.checklist[key as keyof Stock["checklist"]]
+                    !(stock.checklist?.[key as keyof Stock["checklist"]] ?? false)
                   )
                 }
               >
                 <div
                   className={`p-1 rounded ${
-                    stock.checklist[key as keyof Stock["checklist"]]
+                    (stock.checklist?.[key as keyof Stock["checklist"]] ?? false)
                       ? "bg-green-100"
                       : "bg-red-100"
                   }`}
                 >
-                  {stock.checklist[key as keyof Stock["checklist"]] ? (
+                  {(stock.checklist?.[key as keyof Stock["checklist"]] ?? false) ? (
                     <Check className="w-4 h-4 text-green-600" />
                   ) : (
                     <X className="w-4 h-4 text-red-600" />
@@ -172,6 +173,17 @@ export function StockCard({
                     rel="noopener noreferrer"
                     className="text-sm text-gray-700 hover:underline"
                     style={{ cursor: "pointer" }}
+                  >
+                    {label}
+                  </a>
+                ) : key === "rent" ? (
+                  <a
+                    href={stock?.rentUrl || `https://www.investsite.com.br/graficos_aluguel_posicao.php?cod_negociacao=${stock.symbol}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-gray-700 hover:underline"
+                    style={{ cursor: "pointer" }}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {label}
                   </a>

@@ -24,6 +24,7 @@ export function EditStockModal({
   const [distancePositive, setDistancePositive] = useState(
     stock.distancePositive.toString()
   );
+  const [rentUrl, setRentUrl] = useState(stock?.rentUrl || "");
   const [annotations, setAnnotations] = useState<Annotation[]>(
     stock?.annotations || []
   );
@@ -71,6 +72,7 @@ export function EditStockModal({
       currentPrice: parseFloat(price),
       distanceNegative: parseFloat(distanceNegative),
       distancePositive: parseFloat(distancePositive),
+      rentUrl: rentUrl.trim() ? rentUrl.trim() : null,
       annotations,
     };
 
@@ -150,6 +152,19 @@ export function EditStockModal({
               onChange={(e) => setDistancePositive(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Link de aluguéis
+            </label>
+            <input
+              type="url"
+              value={rentUrl}
+              onChange={(e) => setRentUrl(e.target.value)}
+              placeholder="https://..."
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
             />
           </div>
 

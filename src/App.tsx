@@ -5,6 +5,7 @@ import {
   doc,
   setDoc,
   updateDoc,
+  deleteField,
 } from "firebase/firestore";
 import {
   PlusCircle,
@@ -27,6 +28,20 @@ function App() {
   const [newTargetPrice, setNewTargetPrice] = useState("");
   const [cpf, setCpf] = useState("");
   const [cpfError, setCpfError] = useState("");
+
+  const defaultChecklist: Stock["checklist"] = {
+    insider: false,
+    volume: false,
+    obv: false,
+    adx: false,
+    margemLiquida: false,
+    dividendYield: false,
+    magicFormula: false,
+    distanciaMedia200: false,
+    upside: false,
+    plAverage: false,
+    rent: false,
+  };
 
   useEffect(() => {
     const cpfLocal = localStorage.getItem("dailyb3-cpf");
@@ -64,10 +79,29 @@ function App() {
     const unsubscribe = onSnapshot(
       collection(db, "daily_stocks"),
       (snapshot) => {
-        const stocksData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Stock[];
+        const stocksData = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as Partial<Stock>;
+          const rawChecklist =
+            data.checklist &&
+            typeof data.checklist === "object" &&
+            !Array.isArray(data.checklist)
+              ? (data.checklist as Partial<Stock["checklist"]>)
+              : {};
+          const checklist = {
+            ...defaultChecklist,
+            ...rawChecklist,
+          };
+
+          return {
+            id: docSnap.id,
+            ...data,
+            checklist,
+            score:
+              typeof data.score === "number"
+                ? data.score
+                : Object.values(checklist).filter(Boolean).length,
+          } as Stock;
+        });
 
         const filteredStocks = stocksData.filter((stock) => stock.cpf === cpf);
 
@@ -121,6 +155,7 @@ function App() {
         distanciaMedia200: false,
         upside: false,
         plAverage: false,
+        rent: false,
       },
       score: 0,
       cpf,
@@ -171,11 +206,18 @@ function App() {
     const stockData = await fetchStockData(symbol);
     const currentPrice = stockData?.price || 0;
     const media200 = stockData?.media200;
-    const averagePercent200 =
-      ((currentPrice - (media200 || 0)) * 100) / currentPrice;
-    const upside = oldStock.targetPrice
-      ? ((oldStock.targetPrice - currentPrice) / currentPrice) * 100
+
+    const hasValidPrice = Number.isFinite(currentPrice) && currentPrice > 0;
+
+    const averagePercent200 = hasValidPrice
+      ? ((currentPrice - (media200 || 0)) * 100) / currentPrice
       : undefined;
+
+    const upside =
+      hasValidPrice && typeof oldStock.targetPrice === "number"
+        ? ((oldStock.targetPrice - currentPrice) / currentPrice) * 100
+        : undefined;
+
     return { currentPrice, media200, upside, averagePercent200 };
   };
 
@@ -188,10 +230,23 @@ function App() {
       console.log(error);
     }
 
-    await updateDoc(doc(db, "daily_stocks", symbol), {
+    const payload: Record<string, any> = {
       ...updates,
-      ...onLineData,
-    });
+      ...(onLineData ?? {}),
+    };
+
+    if ("rentUrl" in updates) {
+      const rentUrl = (updates as any).rentUrl;
+      if (rentUrl === null || rentUrl === "") {
+        payload.rentUrl = deleteField();
+      }
+    }
+
+    const sanitizedPayload = Object.fromEntries(
+      Object.entries(payload).filter(([, value]) => value !== undefined)
+    );
+
+    await updateDoc(doc(db, "daily_stocks", symbol), sanitizedPayload);
   };
 
   useEffect(() => {
